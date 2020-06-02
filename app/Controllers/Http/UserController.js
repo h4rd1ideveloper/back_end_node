@@ -11,12 +11,27 @@ const User = use("App/Models/User");
 
 class UserController {
   /**
-   * @param {string} message
+   * Fire response with code and body.
+   *
    * @param {Response} response
+   * @param message
+   * @param fields
+   * @param payload
+   * @param {Object} props
    * @param {number} code
    **/
-  _error(response, message, code = 400) {
-    return response.status(code).send(JSON.stringify({error: true, message}));
+  _error(response, {message, fields = '', payload = '', ...props}, code = 400) {
+    return response.status(code).send(JSON.stringify({error: true, message, ...props, fields, payload})
+    );
+  }
+
+  /**
+   *
+   * @param {Object} test
+   * @param {array} fields
+   **/
+  _fields(test, fields = []) {
+    return test ? fields.filter(v => !test.hasOwnProperty(v)) : false;
   }
 
   /**
@@ -28,15 +43,17 @@ class UserController {
    * @param {Response} ctx.response
    */
   async index({request, response}) {
+    const user = request.header('authorization', false)
+    const page_start = request.header('page_start', 1)
+    const page_end = request.header('page_end', 20)
     try {
-      const user = request.header('authorization', false)
-      return response.send((user ?
-          await User.findOrFail(user) :
-          await User.all()
-        ).toJSON()
-      )
-    } catch (e) {
-      return this._error(response, e.message)
+      return response.send(await (user ?
+           User.query().with('cars') :
+           User.query().with('cars').forPage(Number(page_start), Number(page_end))
+        ).fetch()
+      );
+    } catch ({message, ...props}) {
+      return this._error(response, {...props, message, fields: !user ? ['authorization'] : []})
     }
   }
 
@@ -54,7 +71,7 @@ class UserController {
       const body = request.only(['name', 'email', 'password']);
       return response.send((await User.create(body)).toJSON())
     } catch ({message}) {
-      return this._error(response, message)
+      return this._error(response, {message, fields: this._error(request.post(), ['name', 'email', 'password'])})
     }
   }
 
@@ -71,7 +88,7 @@ class UserController {
       const {id} = params
       return response.send((await User.findByOrFail('id', id)).toJSON())
     } catch ({message}) {
-      return this._error(response, message)
+      return this._error(response, {message, fields: this._fields(params, ['id'])})
     }
   }
 
@@ -85,6 +102,7 @@ class UserController {
    * @param {Response} ctx.response
    */
   async update({params, request, response}) {
+
     try {
       const user = await User.findOrFail(params.id)
       const {payload: data} = request.only(['payload'])
@@ -92,7 +110,13 @@ class UserController {
       await user.save();
       return user
     } catch ({message}) {
-      return this._error(response, message)
+      return this._error(response, {
+        message,
+        fields: request
+          .post()
+          .hasOwnProperty('payload') ? this._fields((request.post()).payload, ['name', 'email', 'password']) : [],
+        payload: (request.post()).payload
+      });
     }
   }
 
@@ -107,10 +131,10 @@ class UserController {
   async destroy({params, request, response}) {
     try {
       const {id} = params
-      const user = await User.find(id)
+      const user = await User.findOrFail(id)
       await user.delete()
     } catch ({message}) {
-      return this._error(response, message)
+      return this._error(response, {message, fields: this._fields(params, ['id'])})
     }
   }
 }
