@@ -1,0 +1,22 @@
+@import url("https://fonts.googleapis.com/css?family=Montserrat:300");
+body {
+  font-family: Montserrat;
+  font-weight: 300;
+}
+#login-page {
+  font-family: Montserrat;
+  font-weight: 300;
+  height: 100vh;
+  background-color: #343a40f0 !important;
+}
+#DOUMS {
+  letter-spacing: 2.4rem !important;
+}
+form input {
+  background-color: #fffc !important;
+}
+@media (max-width: 767.98px) {
+  #login-page {
+    background-color: #343a40 !important;
+  }
+}
