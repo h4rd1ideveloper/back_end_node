@@ -51,7 +51,7 @@ class UserController {
     const page_end = request.header('page_end', 20)
     try {
       return response.send(await (user ?
-        User.query().with('cars') :
+        User.query().with('cars').where('id', user) :
         User.query().with('cars').forPage(Number(page_start), Number(page_end))
       ).fetch()
       );
