@@ -73,7 +73,7 @@ class UserController {
     try {
       const body = request.only(['name', 'email', 'password']);
       const test = await User.findBy('email', body.email)
-      if (test && test.hasOwnProperty('email')) {
+      if (test && test.email) {
         return response.send({
           error: true,
           fields: ['email'],
@@ -85,7 +85,7 @@ class UserController {
       return response.send({
         error: false,
         fields: [],
-        user: { ...test, cars }
+        user: { ...user, cars }
       });
     } catch ({ message }) {
       return this._error(response, { message, fields: ['email'] }, 200)
