@@ -85,7 +85,6 @@ class UserController {
       return response.send({
         error: false,
         fields: [],
-        message: "email already exists",
         user: { ...test, cars }
       });
     } catch ({ message }) {
