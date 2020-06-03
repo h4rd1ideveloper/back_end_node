@@ -72,15 +72,23 @@ class UserController {
   async store({ request, response }) {
     try {
       const body = request.only(['name', 'email', 'password']);
-      const user = (await User.findOrCreate({ email: body.email }, body)).toJSON()
-      const cars = await Car.query().where('user_id', user.id).fetch()
-      const is_valid_pass = await Hash.verify(body.password, user.password)
-      let data = {
-        error: !is_valid_pass,
-        fields: is_valid_pass ? [] : ['email'],
-        user: { ...user, cars }
+      const test = await User.query().where('email', body.email).with('cars').fetch()
+      if (test && test.hasOwnProperty('email')) {
+        return response.send({
+          error: true,
+          fields: ['email'],
+          message: "email already exists",
+          user: test
+        });
       }
-      return response.send(data)
+      const user = (await User.create(body)).toJSON()
+      const cars = await Car.query().where('user_id', user.id).fetch()
+      return response.send({
+        error: false,
+        fields: [],
+        message: "email already exists",
+        user: { ...test, cars }
+      });
     } catch ({ message }) {
       return this._error(response, { message, fields: this._fields(request.post(), ['name', 'email', 'password']) }, 200)
     }
