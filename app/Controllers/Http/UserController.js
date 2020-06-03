@@ -85,7 +85,7 @@ class UserController {
       return response.send({
         error: false,
         fields: [],
-        user: { ...user, cars }
+        user: { ...user.toJSON(), cars }
       });
     } catch ({ message }) {
       return this._error(response, { message, fields: ['email'] }, 200)
