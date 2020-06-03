@@ -4,7 +4,10 @@
 /** @typedef {import('@adonisjs/framework/src/Response')} Response */
 /** @type {typeof import('@adonisjs/lucid/src/Lucid/Model')} */
 const User = use("App/Models/User");
-
+/** @type {typeof import('@adonisjs/lucid/src/Lucid/Model')} */
+const Car = use("App/Models/Car");
+/** @type {import('@adonisjs/framework/src/Hash')} */
+const Hash = use('Hash')
 /**
  * Resourceful controller for interacting with users
  */
@@ -20,8 +23,8 @@ class UserController {
    * @param {Object} props
    * @param {number} code
    **/
-  _error(response, {message, fields = '', payload = '', ...props}, code = 400) {
-    return response.status(code).send(JSON.stringify({error: true, message, ...props, fields, payload})
+  _error(response, { message, fields = '', payload = '', ...props }, code = 400) {
+    return response.status(code).send(JSON.stringify({ error: true, message, ...props, fields, payload })
     );
   }
 
@@ -42,18 +45,18 @@ class UserController {
    * @param {Request} ctx.request
    * @param {Response} ctx.response
    */
-  async index({request, response}) {
+  async index({ request, response }) {
     const user = request.header('authorization', false)
     const page_start = request.header('page_start', 1)
     const page_end = request.header('page_end', 20)
     try {
       return response.send(await (user ?
-           User.query().with('cars') :
-           User.query().with('cars').forPage(Number(page_start), Number(page_end))
-        ).fetch()
+        User.query().with('cars') :
+        User.query().with('cars').forPage(Number(page_start), Number(page_end))
+      ).fetch()
       );
-    } catch ({message, ...props}) {
-      return this._error(response, {...props, message, fields: !user ? ['authorization'] : []})
+    } catch ({ message, ...props }) {
+      return this._error(response, { ...props, message, fields: !user ? ['authorization'] : [] })
     }
   }
 
@@ -66,12 +69,20 @@ class UserController {
    * @param {Request} ctx.request
    * @param {Response} ctx.response
    */
-  async store({request, response}) {
+  async store({ request, response }) {
     try {
       const body = request.only(['name', 'email', 'password']);
-      return response.send((await User.create(body)).toJSON())
-    } catch ({message}) {
-      return this._error(response, {message, fields: this._error(request.post(), ['name', 'email', 'password'])})
+      const user = (await User.findOrCreate({ email: body.email }, body)).toJSON()
+      const cars = await Car.query().where('user_id', user.id).fetch()
+      const is_valid_pass = await Hash.verify(body.password, user.password)
+      let data = {
+        error: !is_valid_pass,
+        fields: is_valid_pass ? [] : ['email'],
+        user: { ...user, cars }
+      }
+      return response.send(data)
+    } catch ({ message }) {
+      return this._error(response, { message, fields: this._fields(request.post(), ['name', 'email', 'password']) }, 200)
     }
   }
 
@@ -83,12 +94,12 @@ class UserController {
    * @param {Request} ctx.request
    * @param {Response} ctx.response
    */
-  async show({params, request, response}) {
+  async show({ params, request, response }) {
     try {
-      const {id} = params
+      const { id } = params
       return response.send((await User.findByOrFail('id', id)).toJSON())
-    } catch ({message}) {
-      return this._error(response, {message, fields: this._fields(params, ['id'])})
+    } catch ({ message }) {
+      return this._error(response, { message, fields: this._fields(params, ['id']) })
     }
   }
 
@@ -101,15 +112,15 @@ class UserController {
    * @param {Request} ctx.request
    * @param {Response} ctx.response
    */
-  async update({params, request, response}) {
+  async update({ params, request, response }) {
 
     try {
       const user = await User.findOrFail(params.id)
-      const {payload: data} = request.only(['payload'])
+      const { payload: data } = request.only(['payload'])
       user.merge(data);
       await user.save();
       return user
-    } catch ({message}) {
+    } catch ({ message }) {
       return this._error(response, {
         message,
         fields: request
@@ -128,13 +139,13 @@ class UserController {
    * @param {Request} ctx.request
    * @param {Response} ctx.response
    */
-  async destroy({params, request, response}) {
+  async destroy({ params, request, response }) {
     try {
-      const {id} = params
+      const { id } = params
       const user = await User.findOrFail(id)
       await user.delete()
-    } catch ({message}) {
-      return this._error(response, {message, fields: this._fields(params, ['id'])})
+    } catch ({ message }) {
+      return this._error(response, { message, fields: this._fields(params, ['id']) })
     }
   }
 }

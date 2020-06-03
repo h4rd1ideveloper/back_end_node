@@ -46,7 +46,7 @@ class CarController {
     const page_end = request.header('page_end', 20)
     try {
       return response.send(await (car_id ?
-          Car.query().with('user').where('id', car_id) :
+          Car.query().where('id', car_id) :
           Car.query().with('user').forPage(Number(page_start), Number(page_end))
         ).fetch()
       );
