@@ -1,8 +1,8 @@
 {
-  "name": "adonis-fullstack-app",
+  "name": "userscarsapi",
   "version": "4.1.0",
   "adonis-version": "4.1.0",
-  "description": "The fullstack application boilerplate for Adonisjs",
+  "description": "Web api",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
@@ -10,10 +10,9 @@
     "dev": "nodemon server.js"
   },
   "keywords": [
-    "adonisjs",
-    "adonis-app"
+    "Api"
   ],
-  "author": "",
+  "author": "Yan Policarpo",
   "license": "UNLICENSED",
   "private": true,
   "dependencies": {
