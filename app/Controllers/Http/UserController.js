@@ -80,7 +80,7 @@ class UserController {
           message: "email already exists",
         });
       }
-      const user = (await User.create(body)).toJSON()
+      const user = await User.create(body)
       const cars = await Car.query().where('user_id', user.id).fetch()
       return response.send({
         error: false,
