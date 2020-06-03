@@ -72,7 +72,7 @@ class UserController {
   async store({ request, response }) {
     try {
       const body = request.only(['name', 'email', 'password']);
-      const test = (await User.findBy('email', body.email)).toJSON()
+      const test = await User.findBy('email', body.email)
       if (test && test.hasOwnProperty('email')) {
         return response.send({
           error: true,
