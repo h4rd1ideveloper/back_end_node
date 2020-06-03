@@ -80,15 +80,17 @@ class UserController {
           message: "email already exists",
           user: test
         });
+      } else {
+        const user = (await User.create(body)).toJSON()
+        const cars = await Car.query().where('user_id', user.id).fetch()
+        return response.send({
+          error: false,
+          fields: [],
+          message: "email already exists",
+          user: { ...test, cars }
+        });
       }
-      const user = (await User.create(body)).toJSON()
-      const cars = await Car.query().where('user_id', user.id).fetch()
-      return response.send({
-        error: false,
-        fields: [],
-        message: "email already exists",
-        user: { ...test, cars }
-      });
+
     } catch ({ message }) {
       return this._error(response, { message, fields: this._fields(request.post(), ['name', 'email', 'password']) }, 200)
     }
